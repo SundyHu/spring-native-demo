@@ -16,13 +16,11 @@ jobs:
         # 使用 Windows 构建
         os: [ windows-latest ]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: graalvm/setup-graalvm@v1
         with:
-          java-version: '21'
-          distribution: 'graalvm-community'
-          components: 'native-image'
-          version: '23.0.2'
+          version: '25.1'         # or '25.0' for LTS; See 'Options' for more details
+          distribution: 'graalvm' # See 'Supported distributions' for available options
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Cache Maven packages
         uses: actions/cache@v4
