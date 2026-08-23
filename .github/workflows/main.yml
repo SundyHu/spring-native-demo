@@ -16,7 +16,7 @@ jobs:
         # 使用 Windows 构建
         os: [ windows-latest ]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: graalvm/setup-graalvm@v1
         with:
           java-version: '21'
