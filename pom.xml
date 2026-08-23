@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.ricky.demo</groupId>
+    <artifactId>spring-native-demo</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>4.0.7</version>
+        <relativePath/>
+    </parent>
+
+    <properties>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+        </dependency>
+    </dependencies>
+
+    <profiles>
+        <profile>
+            <id>build-windows-native</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.graalvm.buildtools</groupId>
+                        <artifactId>graalvm-reachability-metadata</artifactId>
+                        <version>1.1.8</version>
+                        <extensions>true</extensions>
+                        <executions>
+                            <execution>
+                                <id>build-native</id>
+                                <goals>
+                                    <goal>compile-no-fork</goal>
+                                </goals>
+                                <phase>package</phase>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <skip>false</skip>
+                            <imageName>${project.artifactId}</imageName>
+                            <fallback>false</fallback>
+                            <buildArgs>
+                                <!-- 这是 Windows NT 平台编译器的独有编译参数，SUBSYSTEM 后面可以跟多个参数，WINDOWS 代表窗口程序，而 CONSOLE 会打开一个黑色的控制台来显示日志等信息。支持的参数可以见微软的文档：https://learn.microsoft.com/zh-cn/cpp/build/reference/subsystem-specify-subsystem?view=msvc-170 -->
+                                <buildArg>-H:NativeLinkerOption=/SUBSYSTEM:CONSOLE</buildArg>
+                                <buildArg>-J-Dfile.encoding=UTF-8</buildArg>
+                                <buildArg>-J-Dstdout.encoding=UTF-8</buildArg>
+                                <buildArg>-J-Dstderr.encoding=UTF-8</buildArg>
+                                <buildArg>-J-Dconsole.encoding=UTF-8</buildArg>
+                                <buildArg>-J-Duser.language=en</buildArg>
+                                <buildArg>-J-Duser.region=US</buildArg>
+                                <buildArg>--verbose</buildArg>
+                                <buildArg>--add-opens=java.base/java.nio=ALL-UNNAMED</buildArg>
+                                <buildArg>--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED</buildArg>
+                                <buildArg>--add-opens=java.base/jdk.internal.ref=ALL-UNNAMED</buildArg>
+                                <buildArg>--report-unsupported-elements-at-runtime</buildArg>
+                                <buildArg>--allow-incomplete-classpath</buildArg>
+                                <buildArg>--enable-url-protocols=http,https</buildArg>
+                                <buildArg>-H:+ReportExceptionStackTraces</buildArg>
+                                <buildArg>--gc=serial</buildArg>
+                                <buildArg>-H:ConfigurationFileDirectories=./src/main/resources/META-INF/native-image</buildArg>
+                                <buildArg>--initialize-at-build-time=org.slf4j.helpers.NOPLoggerFactory</buildArg>
+                                <buildArg>--initialize-at-build-time=org.slf4j.helpers.NOP_FallbackServiceProvider</buildArg>
+                                <buildArg>--initialize-at-build-time=org.slf4j.helpers.SubstituteServiceProvider</buildArg>
+                                <buildArg>--initialize-at-build-time=org.slf4j.helpers.SubstituteLoggerFactory</buildArg>
+                                <buildArg>--initialize-at-build-time=java.util.logging.ConsoleHandler</buildArg>
+                                <buildArg>--initialize-at-build-time=java.util.logging.FileHandler</buildArg>
+                                <buildArg>-H:+UnlockExperimentalVMOptions</buildArg>
+                            </buildArgs>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.graalvm.buildtools</groupId>
+                <artifactId>native-maven-plugin</artifactId>
+                <extensions>true</extensions>
+                <executions>
+                    <execution>
+                        <id>build-image</id>
+                        <goals>
+                            <goal>compile-no-fork</goal>
+                        </goals>
+                        <phase>package</phase>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>
