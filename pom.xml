@@ -44,6 +44,11 @@
                 <groupId>org.graalvm.buildtools</groupId>
                 <artifactId>native-maven-plugin</artifactId>
                 <extensions>true</extensions>
+                <configuration>
+                    <buildArgs>
+                        <buildArg>-march=compatibility</buildArg>
+                    </buildArgs>
+                </configuration>     
                 <executions>
                     <execution>
                         <id>build-image</id>
