@@ -1,0 +1,44 @@
+name: JavaCI - GraalVM NativeImage
+ 
+on:
+  push:
+    branches: [ "master", "main" ]
+  pull_request:
+    branches: [ "master", "main" ]
+ 
+jobs:
+  build-windows:
+    name: ${{ matrix.version }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        version: [ latest ]
+        # 使用 Windows 构建
+        os: [ windows-latest ]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '21'
+          distribution: 'graalvm-community'
+          components: 'native-image'
+          version: '23.0.2'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Cache Maven packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: Build with Maven
+        run: mvn -B -ntp package -Pnative-windows # 这是 Windows 部分唯一不同的部分，换了个 Maven Profile
+        env:
+          NO_DOCKER: ${{ runner.os != 'Linux' }}
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts ${{ matrix.version }} on ${{ matrix.os }}
+          path: |
+            target/spring-native-demo.jar
+            target/spring-native-demo-binary
+            target/*.exe
