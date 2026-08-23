@@ -29,7 +29,7 @@ jobs:
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
       - name: Build with Maven
-        run: mvn -B -ntp package -Pnative-windows # 这是 Windows 部分唯一不同的部分，换了个 Maven Profile
+        run: mvn -B -ntp package -Pbuild-native-windows # 这是 Windows 部分唯一不同的部分，换了个 Maven Profile
         env:
           NO_DOCKER: ${{ runner.os != 'Linux' }}
       - name: Upload build artifacts
