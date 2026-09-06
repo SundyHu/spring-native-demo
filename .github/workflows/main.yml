@@ -19,8 +19,8 @@ jobs:
       - uses: actions/checkout@v6
       - uses: graalvm/setup-graalvm@v1
         with:
-          version: '25.1'         # or '25.0' for LTS; See 'Options' for more details
-          distribution: 'graalvm' # See 'Supported distributions' for available options
+          version: '25.0'         # or '25.0' for LTS; See 'Options' for more details
+          distribution: 'liberica' # See 'Supported distributions' for available options
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Cache Maven packages
         uses: actions/cache@v4
