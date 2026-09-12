@@ -40,11 +40,61 @@ jobs:
         run: mvn -B -ntp package -Pnative # 这是 Windows 部分唯一不同的部分，换了个 Maven Profile
         env:
           NO_DOCKER: ${{ runner.os != 'Linux' }}
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+      name: JavaCI - GraalVM NativeImage
+ 
+on:
+  push:
+    branches: [ "master", "main" ]
+  pull_request:
+    branches: [ "master", "main" ]
+ 
+jobs:
+  build-windows:
+    name: ${{ matrix.version }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ macos-latest, windows-latest, ubuntu-latest ]
+        include:
+          - os: 'ubuntu-latest'
+            platform: 'linux-amd64'
+          - os: 'macos-latest'
+            platform: 'darwin-arm64'
+          - os: 'macos-13'
+            platform: 'darwin-amd64'
+          - os: 'windows-latest'
+            platform: 'win-amd64'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: graalvm/setup-graalvm@v1
         with:
-          name: build-artifacts ${{ matrix.version }} on ${{ matrix.os }}
-          path: |
-            target/spring-native-demo.jar
-            target/spring-native-demo-binary
-            target/*.exe
+          distribution: 'liberica'
+          java-version: '25'
+          java-package: 'jdk'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: Build with Maven
+        run: mvn package -Pnative # 这是 Windows 部分唯一不同的部分，换了个 Maven Profile
+        env:
+          NO_DOCKER: ${{ runner.os != 'Linux' }}
+      - name: Archive Release
+        uses: thedoctor0/zip-release@0.7.5
+        with:
+          type: 'zip'
+          filename: "raffle-${{ matrix.platform }}.zip"
+          directory: target/native
+
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ github.ref }}
+          release_name: native-image
+          file: "target/native/raffle-${{ matrix. platform }}.zip"
+          overwrite: true
+          make_latest: true
