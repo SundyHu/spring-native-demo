@@ -1,18 +1,15 @@
-name: Native Image
-
+name: JavaCI - GraalVM NativeImage
+ 
 on:
-  workflow_dispatch:
   push:
-    paths-ignore:
-      - 'docs/**'
-      - '**/*.md'
-    branches:
-      - main
-
+    branches: [ "master", "main" ]
+  pull_request:
+    branches: [ "master", "main" ]
+ 
 jobs:
-  build_non_win_images:
-    name: 'Build Native Image ${{ matrix.platform }}'
-    needs: [ test_linux_headless ]
+  build-windows:
+    name: ${{ matrix.version }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ macos-latest, windows-latest, ubuntu-latest ]
@@ -25,45 +22,29 @@ jobs:
             platform: 'darwin-amd64'
           - os: 'windows-latest'
             platform: 'win-amd64'
-    runs-on: ${{matrix.os}}
-    permissions:
-      contents: write
     steps:
-      - name: linux packages
-        if: ${{ matrix.os == 'ubuntu-latest' }}
-        run: |
-          sudo apt-get update
-          sudo apt install libasound2-dev libavcodec-dev libavformat-dev libavutil-dev libgl-dev libgtk-3-dev libpango1.0-dev libxtst-dev
-
-      - name: Checkout the repository
-        uses: actions/checkout@v4
-
+      - uses: actions/checkout@v6
       - uses: graalvm/setup-graalvm@v1
         with:
           distribution: 'liberica'
           java-version: '25'
           java-package: 'jdk'
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          cache: maven
-
-      - name: Build
-        shell: bash
-        run: |
-          ./mvn -Pnative package
-
-      - name: Archive Release
-        uses: thedoctor0/zip-release@0.7.5
+      - name: Cache Maven packages
+        uses: actions/cache@v4
         with:
-          type: 'zip'
-          filename: "raffle-${{ matrix.platform }}.zip"
-          directory: target/native
-
-      - name: Upload binaries to release
-        uses: svenstaro/upload-release-action@v2
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: Build with Maven
+        run: mvn -B -ntp package -Pnative # 这是 Windows 部分唯一不同的部分，换了个 Maven Profile
+        env:
+          NO_DOCKER: ${{ runner.os != 'Linux' }}
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ github.ref }}
-          release_name: native-image
-          file: "target/native/raffle-${{ matrix. platform }}.zip"
-          overwrite: true
-          make_latest: true
+          name: build-artifacts ${{ matrix.version }} on ${{ matrix.os }}
+          path: |
+            target/spring-native-demo.jar
+            target/spring-native-demo-binary
+            target/*.exe
